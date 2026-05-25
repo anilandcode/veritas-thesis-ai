@@ -496,11 +496,18 @@ h1, h2, h3, h4 {
 
 /* Suggestions Pills Container */
 .suggestions-box {
-  padding: 0 24px;
+  padding: 0 24px 8px 24px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+}
+
+.suggestions-box::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome, Safari, Opera */
 }
 
 .suggestion-pill {
@@ -514,6 +521,7 @@ h1, h2, h3, h4 {
   transition: all 0.2s ease;
   font-weight: 500;
   text-align: left;
+  flex-shrink: 0; /* Prevent pill collapsing in single-row scrolling layouts */
 }
 
 .suggestion-pill:hover {

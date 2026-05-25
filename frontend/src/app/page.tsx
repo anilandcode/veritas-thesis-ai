@@ -145,7 +145,7 @@ export default function Home() {
 
   const getDynamicSuggestions = () => {
     const outstandingComments = comments.filter(c => !c.is_resolved);
-    const commentSteers = outstandingComments.map(c => `Help me resolve advisor comment: "${c.comment_text.slice(0, 45)}..."`);
+    const commentSteers = outstandingComments.map(c => `💬 Resolve: "${c.comment_text.slice(0, 25)}..."`);
     return [...commentSteers, ...suggestions].slice(0, 5);
   };
   
@@ -1360,13 +1360,9 @@ export default function Home() {
               </header>
 
               <div className="workspace-content">
-                <input 
-                  type="text" 
-                  className="thesis-title-input" 
-                  value={thesisTitle}
-                  onChange={(e) => setThesisTitle(e.target.value)}
-                  disabled
-                />
+                <h1 className="thesis-title-input" style={{ fontSize: "2rem", fontWeight: 800, color: "white", margin: 0, paddingBottom: "8px", borderBottom: "1px solid rgba(255,255,255,0.06)", outline: "none", cursor: "default", userSelect: "none" }}>
+                  {thesisTitle}
+                </h1>
                 
                 {/* Active Section Title and Hints Overlay inside editor view */}
                 <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)", padding: "14px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -1570,7 +1566,7 @@ export default function Home() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "8px 0" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <h4 style={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", color: "white" }}>
-                        Supervisor progress proof certificate
+                        Supervisor Progress Proof Certificate
                       </h4>
                       <button
                         onClick={() => {
@@ -1831,7 +1827,7 @@ export default function Home() {
               {selectedPaper.abstract && (
                 <div>
                   <strong style={{ fontSize: "0.78rem", textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
-                    Source Abstract Takeaway & Takeaways
+                    Source Abstract & Key Insights
                   </strong>
                   <p style={{ fontSize: "0.82rem", color: "var(--text-primary)", lineHeight: "1.5", background: "rgba(10,200,255,0.02)", padding: "12px", borderRadius: "var(--radius-sm)", border: "1px solid rgba(10,200,255,0.15)", margin: 0 }}>
                     {selectedPaper.abstract}
