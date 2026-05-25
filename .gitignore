@@ -1,0 +1,23 @@
+# Python-generated files and environments
+**/__pycache__/
+**/*.py[oc]
+**/build/
+**/dist/
+**/wheels/
+**/*.egg-info
+**/.venv
+**/.python-version
+**/*.db
+**/*.db-journal
+
+# Next.js and frontend dependencies
+**/node_modules/
+**/.next/
+**/out/
+**/*.tsbuildinfo
+next-env.d.ts
+
+# Misc and OS files
+.DS_Store
+**/*.pem
+**/*.log*
