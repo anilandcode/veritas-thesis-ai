@@ -1,7 +1,7 @@
 # ==========================================
 # STAGE 1: Builder (Install dependencies)
 # ==========================================
-FROM ghcr.io/astral-sh/uv:python3.10-alpine AS builder
+FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim AS builder
 
 # Set working directory inside builder
 WORKDIR /app
