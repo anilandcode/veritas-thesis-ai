@@ -93,6 +93,7 @@ async def generate_shadow_thesis_async(thesis_id: int, db: Session):
     for paper_data in all_fetched_papers[:6]:  # Index top 6 highly relevant papers in the database
         # Verify if DOI already exists for this thesis
         existing = db.query(models.ResearchPaper).filter(
+            models.ResearchPaper.thesis_id == thesis_id,
             models.ResearchPaper.doi == paper_data["doi"]
         ).first()
         

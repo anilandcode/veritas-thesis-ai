@@ -53,7 +53,7 @@ class ResearchPaper(Base):
     authors = Column(String, nullable=True)
     journal = Column(String, nullable=True)
     year = Column(Integer, nullable=True)
-    doi = Column(String, unique=True, index=True, nullable=True)
+    doi = Column(String, index=True, nullable=True)
     abstract = Column(Text, nullable=True)
     url = Column(String, nullable=True)
     citation_count = Column(Integer, default=0)

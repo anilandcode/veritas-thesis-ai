@@ -3,19 +3,24 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 
+# Handle 'postgres://' dialect deprecation in SQLAlchemy 1.4+
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 # Determine engine config based on DB type
-is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+is_sqlite = db_url.startswith("sqlite")
 
 if is_sqlite:
     connect_args = {"check_same_thread": False}
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         connect_args=connect_args
     )
 else:
     # Production-ready PostgreSQL connection pooling
     engine = create_engine(
-        settings.DATABASE_URL,
+        db_url,
         pool_size=10,
         max_overflow=20,
         pool_recycle=3600,
