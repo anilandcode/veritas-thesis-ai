@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface TimelineLog {
   id: number;
@@ -46,7 +47,6 @@ export default function SupervisorVerifyPortal() {
   const [report, setReport] = useState<VerificationReport | null>(null);
   const [activeTab, setActiveTab] = useState<string>("");
 
-  // Handle URL signature code queries if present on load (e.g. /verify?sig=...)
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -58,7 +58,6 @@ export default function SupervisorVerifyPortal() {
     }
   }, []);
 
-  // Sync active inspect tab to first outline section when report changes
   useEffect(() => {
     if (report && report.outline.length > 0) {
       setActiveTab(report.outline[0].section_key);
@@ -77,7 +76,6 @@ export default function SupervisorVerifyPortal() {
     setReport(null);
 
     try {
-      // Slashes are natively handled due to backend `{sig_code:path}` routing
       const encodedCode = encodeURIComponent(code);
       const res = await fetch(`${BACKEND_URL}/thesis/verify-certificate/${encodedCode}`);
       
@@ -111,11 +109,11 @@ export default function SupervisorVerifyPortal() {
   const getActionColor = (action: string) => {
     switch (action) {
       case "unlock_section":
-        return "var(--accent-green)";
+        return "var(--success)";
       case "audit_failure":
-        return "var(--accent-red)";
+        return "var(--danger)";
       default:
-        return "var(--accent-cyan)";
+        return "var(--accent-blue)";
     }
   };
 
@@ -124,7 +122,6 @@ export default function SupervisorVerifyPortal() {
       width: "100%",
       minHeight: "100vh",
       background: "var(--bg-main)",
-      backgroundImage: "var(--grad-dark)",
       color: "var(--text-primary)",
       fontFamily: "var(--font-sans)",
       padding: "32px 16px",
@@ -143,42 +140,41 @@ export default function SupervisorVerifyPortal() {
           <div style={{
             width: "36px",
             height: "36px",
-            background: "var(--grad-primary)",
-            borderRadius: "50%",
+            background: "var(--text-primary)",
+            borderRadius: "4px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "var(--shadow-glow)"
+            justifyContent: "center"
           }}>
-            <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "white" }}>V</span>
+            <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--bg-card)" }}>V</span>
           </div>
           <div>
-            <h1 style={{ fontSize: "1.25rem", fontWeight: 800, letterSpacing: "-0.03em" }}>
-              VERITAS <span className="text-gradient">AI</span>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 600, letterSpacing: "-0.03em" }}>
+              Veritas AI
             </h1>
-            <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <span style={{ fontSize: "11px", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
               B2B Authorship Verification Portal
             </span>
           </div>
         </div>
-        <a 
-          href="/"
+        <Link 
+          href="/app"
           className="btn btn-secondary"
-          style={{ textDecoration: "none", fontSize: "0.75rem", padding: "8px 16px" }}
+          style={{ textDecoration: "none", fontSize: "13px" }}
         >
           Return to Workspace
-        </a>
+        </Link>
       </header>
 
       {/* Main Core Layout Grid */}
       <main style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "32px" }}>
         
         {/* Search Drawer Panel */}
-        <section className="glass" style={{ padding: "32px", borderRadius: "var(--radius-lg)" }}>
-          <h2 style={{ fontSize: "1.3rem", fontWeight: 700, marginBottom: "8px" }}>
+        <section className="panel" style={{ padding: "32px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: 600, marginBottom: "8px" }}>
             Verify Academic Authorship
           </h2>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "24px" }}>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginBottom: "24px" }}>
             Paste the progress signature code generated from a student's Authorship Progress Ledger. 
             Veritas AI will retrieve the immutable audit trail verifying step-by-step drafting milestones.
           </p>
@@ -190,18 +186,11 @@ export default function SupervisorVerifyPortal() {
               value={sigCode}
               onChange={(e) => setSigCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleVerifySignature()}
+              className="text-field"
               style={{
                 flex: 1,
                 minWidth: "280px",
-                background: "var(--bg-input)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "var(--radius-sm)",
-                padding: "12px 16px",
-                color: "white",
-                fontSize: "0.88rem",
-                fontFamily: "monospace",
-                outline: "none",
-                transition: "all 0.3s ease"
+                fontFamily: "monospace"
               }}
             />
             <button
@@ -209,16 +198,8 @@ export default function SupervisorVerifyPortal() {
               disabled={loading}
               className="btn btn-primary"
               style={{
-                padding: "12px 28px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                background: "var(--grad-primary)",
-                boxShadow: "var(--shadow-glow)",
-                opacity: loading ? 0.7 : 1,
-                transition: "all 0.3s ease"
+                padding: "0 28px",
+                fontSize: "14px"
               }}
             >
               {loading ? "Locating Certificate..." : "Verify Progress Certificate"}
@@ -226,14 +207,13 @@ export default function SupervisorVerifyPortal() {
           </div>
 
           {error && (
-            <div className="glass" style={{
+            <div className="badge badge-evidence-gap" style={{
               marginTop: "20px",
               padding: "14px 18px",
-              borderRadius: "var(--radius-sm)",
-              borderLeft: "4px solid var(--accent-red)",
-              background: "rgba(239, 68, 68, 0.05)",
-              color: "white",
-              fontSize: "0.82rem"
+              width: "100%",
+              display: "block",
+              borderRadius: "var(--radius-md)",
+              fontSize: "13px"
             }}>
               ⚠️ <strong>Audit Error:</strong> {error}
             </div>
@@ -247,65 +227,47 @@ export default function SupervisorVerifyPortal() {
             <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
               
               {/* Profile Details Card */}
-              <section className="glass" style={{ padding: "28px", borderRadius: "var(--radius-lg)" }}>
+              <section className="panel" style={{ padding: "28px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
                   <div>
-                    <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--accent-cyan)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent-blue)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       Identity Audited Successfully
                     </span>
-                    <h3 style={{ fontSize: "1.4rem", fontWeight: 800, margin: "4px 0 8px 0" }}>
+                    <h3 style={{ fontSize: "22px", fontWeight: 600, margin: "4px 0 8px 0" }}>
                       {report.thesis_title}
                     </h3>
-                    <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
-                      Student Email: <strong style={{ color: "white" }}>{report.student_email}</strong>
+                    <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "8px" }}>
+                      Student Email: <strong style={{ color: "var(--text-primary)" }}>{report.student_email}</strong>
                     </p>
                   </div>
-                  <div style={{
-                    background: "rgba(16, 185, 129, 0.1)",
-                    border: "1.5px solid var(--accent-green)",
-                    color: "white",
-                    padding: "8px 16px",
-                    borderRadius: "20px",
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    boxShadow: "0 0 15px rgba(16, 185, 129, 0.2)"
-                  }}>
-                    <span style={{ width: "8px", height: "8px", background: "var(--accent-green)", borderRadius: "50%", display: "inline-block", animation: "pulse 2s infinite" }}></span>
+                  <div className="badge badge-source-linked" style={{ fontSize: "12px", padding: "6px 16px" }}>
+                    <span style={{ width: "8px", height: "8px", background: "var(--success)", borderRadius: "50%", display: "inline-block", animation: "pulse-glow 1.5s infinite" }}></span>
                     Authorship Authenticated
                   </div>
                 </div>
 
-                <div style={{
-                  background: "rgba(0,0,0,0.2)",
-                  padding: "16px",
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border-color)",
-                  marginBottom: "20px"
-                }}>
-                  <strong style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
+                <div className="panel-subtle" style={{ marginBottom: "20px", padding: "16px" }}>
+                  <strong style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>
                     Research Topic & Concept
                   </strong>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: "1.5" }}>
+                  <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: "1.5" }}>
                     {report.topic_description}
                   </p>
                 </div>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", fontSize: "12px", color: "var(--text-secondary)" }}>
                   <div>
-                    Certificate Key: <code style={{ color: "var(--accent-cyan)", fontFamily: "monospace" }}>{report.verification_sig.split("-")[3] || "N/A"}</code>
+                    Certificate Key: <code style={{ color: "var(--accent-blue)", fontFamily: "monospace" }}>{report.verification_sig.split("-")[3] || "N/A"}</code>
                   </div>
                   <div>
-                    Synthesized Facts: <strong style={{ color: "white" }}>{report.timeline.filter(t => t.action === "unlock_section").length} Locked Gates Cleared</strong>
+                    Synthesized Facts: <strong style={{ color: "var(--text-primary)" }}>{report.timeline.filter(t => t.action === "unlock_section").length} Locked Gates Cleared</strong>
                   </div>
                 </div>
               </section>
 
               {/* Tabbed Interactive Section Draft Inspector */}
-              <section className="glass" style={{ padding: "28px", borderRadius: "var(--radius-lg)" }}>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <section className="panel" style={{ padding: "28px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
                   📂 Student Outline Drafts Inspector
                 </h3>
 
@@ -317,12 +279,12 @@ export default function SupervisorVerifyPortal() {
                       onClick={() => setActiveTab(item.section_key)}
                       style={{
                         padding: "10px 16px",
-                        fontSize: "0.82rem",
+                        fontSize: "13px",
                         fontWeight: 600,
                         background: "transparent",
                         border: "none",
-                        color: activeTab === item.section_key ? "var(--accent-cyan)" : "var(--text-muted)",
-                        borderBottom: activeTab === item.section_key ? "2.5px solid var(--accent-cyan)" : "2px solid transparent",
+                        color: activeTab === item.section_key ? "var(--accent-blue)" : "var(--text-tertiary)",
+                        borderBottom: activeTab === item.section_key ? "2.5px solid var(--accent-blue)" : "2px solid transparent",
                         cursor: "pointer",
                         transition: "all 0.2s ease"
                       }}
@@ -336,7 +298,6 @@ export default function SupervisorVerifyPortal() {
                 {report.outline.map((item) => {
                   if (item.section_key !== activeTab) return null;
 
-                  // Find latest unlock or save for this section to inspect details
                   const logs = report.timeline.filter(t => t.section_key === item.section_key);
                   const latestLog = logs[logs.length - 1];
 
@@ -344,44 +305,44 @@ export default function SupervisorVerifyPortal() {
                     <div key={item.section_key} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                       
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                        <div style={{ background: "rgba(0,0,0,0.15)", padding: "12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-color)" }}>
-                          <span style={{ fontSize: "0.68rem", textTransform: "uppercase", color: "var(--text-muted)" }}>Section Status</span>
-                          <strong style={{ display: "block", fontSize: "0.88rem", color: item.status === "Completed" ? "var(--accent-green)" : "var(--accent-amber)", marginTop: "4px" }}>
+                        <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                          <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--text-tertiary)" }}>Section Status</span>
+                          <strong style={{ display: "block", fontSize: "14px", color: item.status === "Completed" ? "var(--success)" : "var(--warning)", marginTop: "4px" }}>
                             {item.status}
                           </strong>
                         </div>
-                        <div style={{ background: "rgba(0,0,0,0.15)", padding: "12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-color)" }}>
-                          <span style={{ fontSize: "0.68rem", textTransform: "uppercase", color: "var(--text-muted)" }}>Draft Length</span>
-                          <strong style={{ display: "block", fontSize: "0.88rem", color: "white", marginTop: "4px" }}>
+                        <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                          <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--text-tertiary)" }}>Draft Length</span>
+                          <strong style={{ display: "block", fontSize: "14px", color: "var(--text-primary)", marginTop: "4px" }}>
                             {item.draft_text.length} characters
                           </strong>
                         </div>
-                        <div style={{ background: "rgba(0,0,0,0.15)", padding: "12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-color)" }}>
-                          <span style={{ fontSize: "0.68rem", textTransform: "uppercase", color: "var(--text-muted)" }}>Local Plagiarism Risk</span>
-                          <strong style={{ display: "block", fontSize: "0.88rem", color: (latestLog?.plagiarism_index || 0) >= 0.30 ? "var(--accent-amber)" : "var(--accent-green)", marginTop: "4px" }}>
+                        <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                          <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--text-tertiary)" }}>Local Plagiarism Risk</span>
+                          <strong style={{ display: "block", fontSize: "14px", color: (latestLog?.plagiarism_index || 0) >= 0.30 ? "var(--warning)" : "var(--success)", marginTop: "4px" }}>
                             {((latestLog?.plagiarism_index || 0) * 100).toFixed(1)}% ({latestLog?.plagiarism_index >= 0.30 ? "Moderate" : "Low"})
                           </strong>
                         </div>
                       </div>
 
                       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                        <strong style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                        <strong style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--text-tertiary)" }}>
                           Draft Text Content
                         </strong>
                         <div style={{
-                          background: "rgba(0,0,0,0.25)",
+                          background: "var(--bg-subtle)",
                           border: "1px solid var(--border-color)",
-                          borderRadius: "var(--radius-md)",
+                          borderRadius: "8px",
                           padding: "20px",
-                          fontSize: "0.88rem",
-                          lineHeight: "1.6",
+                          fontSize: "14px",
+                          lineHeight: "1.65",
                           color: "var(--text-secondary)",
                           whiteSpace: "pre-wrap",
                           maxHeight: "350px",
                           overflowY: "auto"
                         }}>
                           {item.draft_text || (
-                            <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
+                            <span style={{ color: "var(--text-tertiary)", fontStyle: "italic" }}>
                               No draft content has been submitted or saved for this section yet.
                             </span>
                           )}
@@ -395,11 +356,11 @@ export default function SupervisorVerifyPortal() {
             </div>
 
             {/* Right Side: Visual Chronological Timeline */}
-            <section className="glass" style={{ padding: "28px", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", gap: "20px" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
+            <section className="panel" style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "20px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
                 ⏳ Chronological Authorship Trail
               </h3>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
                 Below is the tamper-proof ledger of student milestones recorded chronologically on our servers.
               </p>
 
@@ -409,7 +370,7 @@ export default function SupervisorVerifyPortal() {
                 gap: "24px",
                 position: "relative",
                 paddingLeft: "20px",
-                borderLeft: "2px solid rgba(255,255,255,0.06)",
+                borderLeft: "2px solid var(--border-color)",
                 marginTop: "10px",
                 maxHeight: "750px",
                 overflowY: "auto",
@@ -422,7 +383,7 @@ export default function SupervisorVerifyPortal() {
                     <div style={{
                       position: "absolute",
                       left: "-27px",
-                      top: "2px",
+                      top: "4px",
                       width: "12px",
                       height: "12px",
                       borderRadius: "50%",
@@ -432,28 +393,28 @@ export default function SupervisorVerifyPortal() {
                     }}></div>
 
                     <div className="paper-card" style={{
-                      background: "rgba(255,255,255,0.01)",
+                      background: "var(--bg-card)",
                       border: "1px solid var(--border-color)",
-                      borderRadius: "var(--radius-md)",
+                      borderRadius: "8px",
                       padding: "16px",
                       transition: "all 0.2s ease"
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "8px" }}>
                         <span style={{
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
+                          fontSize: "12px",
+                          fontWeight: 600,
                           color: getActionColor(log.action)
                         }}>
                           {getActionLabel(log.action)}
                         </span>
-                        <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                        <span style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
                           {new Date(log.created_at).toLocaleString()}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ fontSize: "12.5px", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: "6px" }}>
                         <div>
-                          Section Checkpoint: <strong style={{ color: "white", textTransform: "capitalize" }}>{log.section_key}</strong>
+                          Section Checkpoint: <strong style={{ color: "var(--text-primary)", textTransform: "capitalize" }}>{log.section_key}</strong>
                         </div>
                         {log.action !== "audit_failure" && (
                           <div style={{ display: "flex", gap: "16px", marginTop: "4px" }}>
@@ -463,7 +424,7 @@ export default function SupervisorVerifyPortal() {
                           </div>
                         )}
                         {log.action === "audit_failure" && (
-                          <div style={{ color: "var(--accent-red)", fontStyle: "italic", fontSize: "0.75rem", marginTop: "4px" }}>
+                          <div style={{ color: "var(--danger)", fontStyle: "italic", fontSize: "11px", marginTop: "4px" }}>
                             Pedagogical Gating active. Locked status maintained.
                           </div>
                         )}
@@ -491,53 +452,8 @@ export default function SupervisorVerifyPortal() {
             grid-template-columns: 7fr 5fr;
           }
         }
-        .glass {
-          background: var(--bg-card);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid var(--border-color);
-          box-shadow: var(--shadow-lg);
-          transition: border-color 0.3s ease;
-        }
-        .glass:hover {
-          border-color: var(--border-color-hover);
-        }
         .text-gradient {
-          background: var(--grad-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: var(--radius-sm);
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .btn-secondary {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border-color);
-          color: var(--text-secondary);
-        }
-        .btn-secondary:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: var(--border-color-hover);
-          color: white;
-        }
-        .paper-card {
-          background: rgba(255, 255, 255, 0.01);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-        }
-        .paper-card:hover {
-          border-color: var(--border-color-hover);
-          background: rgba(255, 255, 255, 0.02);
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.95); }
+          color: var(--accent-blue);
         }
       `}</style>
     </div>

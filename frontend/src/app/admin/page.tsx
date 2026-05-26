@@ -327,7 +327,7 @@ export default function DeanPortal() {
           {/* Card 3 */}
           <div className="paper-card glass" style={{ padding: "20px", border: "1px solid rgba(255,255,255,0.05)" }}>
             <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--accent-green)", textTransform: "uppercase" }}>
-              Swarm Socratic dialogs
+              Socratic dialogue count
             </span>
             <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "12px" }}>
               <span style={{ fontSize: "2rem", fontWeight: 800, color: "white" }}>
@@ -336,7 +336,7 @@ export default function DeanPortal() {
               <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Interactions/Student</span>
             </div>
             <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", margin: "8px 0 0 0" }}>
-              Total Socratic dialogue velocity tracked by swarms.
+              Total Socratic dialogue velocity tracked across all sessions.
             </p>
           </div>
 
@@ -440,7 +440,7 @@ export default function DeanPortal() {
                       Autosaves: <span style={{ color: "white", fontWeight: 700 }}>{student.saves_count}</span>
                     </div>
                     <div>
-                      Swarm Dialogs: <span style={{ color: "white", fontWeight: 700 }}>{student.socratic_dialogs_count}</span>
+                      Socratic Dialogs: <span style={{ color: "white", fontWeight: 700 }}>{student.socratic_dialogs_count}</span>
                     </div>
                     <div>
                       Unlocks: <span style={{ color: "white", fontWeight: 700 }}>{student.unlocked_checkpoints_count} / 4 Milestones</span>
