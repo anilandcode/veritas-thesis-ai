@@ -98,6 +98,24 @@ async def generate_shadow_thesis_async(thesis_id: int, db: Session):
         ).first()
         
         if not existing:
+            is_retracted = False
+            retraction_details = None
+            licence = None
+            
+            # Crossref Enrichment & Retraction Check (Skip for mock DOIs)
+            if paper_data["doi"] and not paper_data["doi"].startswith("10.1000/mock"):
+                try:
+                    from app.services.academic_clients import fetch_crossref_metadata
+                    crossref_info = await fetch_crossref_metadata(paper_data["doi"])
+                    if crossref_info:
+                        is_retracted = crossref_info.get("is_retracted", False)
+                        retraction_details = crossref_info.get("retraction_details")
+                        licence = crossref_info.get("licence")
+                        if is_retracted:
+                            print(f"[Shadow Thesis Ingestion] WARNING: Harvested paper is RETRACTED: '{paper_data['title']}' (DOI: {paper_data['doi']})")
+                except Exception as ex:
+                    print(f"[Shadow Thesis Ingestion] Crossref check failed for DOI {paper_data['doi']}: {str(ex)}")
+
             db_paper = models.ResearchPaper(
                 thesis_id=thesis_id,
                 title=paper_data["title"],
@@ -108,7 +126,10 @@ async def generate_shadow_thesis_async(thesis_id: int, db: Session):
                 abstract=paper_data["abstract"][:800], # Cap abstract size
                 url=paper_data["url"],
                 citation_count=paper_data["citation_count"],
-                confidence_level=paper_data["confidence_level"]
+                confidence_level=paper_data["confidence_level"],
+                is_retracted=is_retracted,
+                retraction_details=retraction_details,
+                licence=licence
             )
             db.add(db_paper)
             db_papers.append(db_paper)

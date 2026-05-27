@@ -58,6 +58,9 @@ class ResearchPaper(Base):
     url = Column(String, nullable=True)
     citation_count = Column(Integer, default=0)
     confidence_level = Column(Float, default=1.0)
+    is_retracted = Column(Boolean, default=False)
+    retraction_details = Column(Text, nullable=True)
+    licence = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     thesis = relationship("Thesis", back_populates="papers")

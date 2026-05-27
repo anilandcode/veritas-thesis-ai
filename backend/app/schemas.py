@@ -55,6 +55,9 @@ class ResearchPaperOut(BaseModel):
     url: Optional[str] = None
     confidence_level: float
     citation_count: int
+    is_retracted: bool = False
+    retraction_details: Optional[str] = None
+    licence: Optional[str] = None
 
     class Config:
         from_attributes = True

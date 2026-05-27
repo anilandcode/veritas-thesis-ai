@@ -49,6 +49,9 @@ async def verify_claims_against_papers(thesis_id: int, shadow_text: str, cached_
             
             # Semantic Threshold: If >= 2 technical keywords match, we establish verification!
             if matching_terms >= 2 and paper.doi:
+                if getattr(paper, "is_retracted", False):
+                    print(f"[Fact Verifier] Excluding supporting DOI {paper.doi} - paper is RETRACTED.")
+                    continue
                 supporting_dois.append(paper.doi)
                 
         # 3. Apply the Strict Verification Gate (>= 2 supporting DOIs)

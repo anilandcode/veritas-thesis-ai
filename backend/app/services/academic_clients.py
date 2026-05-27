@@ -216,3 +216,77 @@ async def fetch_all_academic_papers(query: str, limit_per_source: int = 2) -> Li
     print(f"[Academic Clients] Swarm gathered {len(all_papers)} unique papers total.")
     _SWARM_CACHE[query_clean] = all_papers
     return all_papers
+
+async def fetch_crossref_metadata(doi: str) -> Dict[str, Any]:
+    """
+    Queries the Crossref REST API for a specific DOI.
+    Identifies updates, corrections, retractions, licence details, and metadata validity.
+    """
+    url = f"https://api.crossref.org/works/{urllib.parse.quote(doi)}"
+    
+    try:
+        async with httpx.AsyncClient(headers=HEADERS, timeout=8.0, follow_redirects=True) as client:
+            response = await client.get(url)
+            if response.status_code != 200:
+                print(f"[Academic Clients] Crossref DOI lookup error: {response.status_code}")
+                return {}
+                
+            data = response.json().get("message", {})
+            
+            # Extract basic metadata
+            title_list = data.get("title", [])
+            title = title_list[0] if title_list else "Unknown Title"
+            
+            # Parse authors
+            authors_list = []
+            for author in data.get("author", []):
+                given = author.get("given", "")
+                family = author.get("family", "")
+                if family:
+                    authors_list.append(f"{given} {family}".strip())
+            authors = ", ".join(authors_list) if authors_list else "Unknown Authors"
+            
+            # Parse Journal Venue name
+            container_title_list = data.get("container-title", [])
+            journal = container_title_list[0] if container_title_list else "Crossref Publication"
+            
+            # Parse Year
+            published_print = data.get("published-print", {}) or data.get("published", {})
+            date_parts = published_print.get("date-parts", [[]])
+            year = date_parts[0][0] if date_parts[0] else 2025
+            
+            # Parse licence
+            licences = data.get("license", [])
+            licence = licences[0].get("URL") if licences else None
+            
+            # Check for retractions and updates
+            is_retracted = False
+            retraction_details = None
+            
+            # Check if Crossref flags updates or retractions
+            update_to = data.get("update-to", [])
+            if update_to:
+                for update in update_to:
+                    if update.get("type", "").lower() == "retraction":
+                        is_retracted = True
+                        retraction_details = f"Retracted in favor of DOI: {update.get('DOI', '')}"
+            
+            # Check for 'retracted' in title or abstract
+            if "retracted" in title.lower():
+                is_retracted = True
+                retraction_details = "Title contains 'retracted' flag"
+                
+            return {
+                "title": title,
+                "authors": authors,
+                "journal": journal,
+                "year": int(year) if year else 2025,
+                "doi": doi,
+                "licence": licence,
+                "is_retracted": is_retracted,
+                "retraction_details": retraction_details
+            }
+    except Exception as e:
+        print(f"[Academic Clients] Crossref error for DOI {doi}: {str(e)}")
+        
+    return {}
