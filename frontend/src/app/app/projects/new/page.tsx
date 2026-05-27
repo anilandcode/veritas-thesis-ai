@@ -26,10 +26,57 @@ export default function NewProjectWizardPage() {
     "OpenAlex"
   ]);
 
+  // Socratic Pre-Scoping AI State
+  const [isScoping, setIsScoping] = useState(false);
+  const [scopingBrief, setScopingBrief] = useState<{
+    refined_title: string;
+    refined_problem: string;
+    suggested_questions: string[];
+  } | null>(null);
+  const [refinedTitle, setRefinedTitle] = useState("");
+  const [refinedProblem, setRefinedProblem] = useState("");
+  const [selectedQuestion, setSelectedQuestion] = useState("");
+
   const handleToggleDb = (db: string) => {
     setSelectedDatabases(prev => 
       prev.includes(db) ? prev.filter(d => d !== db) : [...prev, db]
     );
+  };
+
+  const handleRefineScope = async () => {
+    setError(null);
+    if (!title.trim() || !topicDescription.trim()) {
+      setError("Please provide an initial title and topic description before refining.");
+      return;
+    }
+    setIsScoping(true);
+    try {
+      const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const res = await fetch(`${BACKEND_URL}/socratic/refine-scope`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          title,
+          topic_description: topicDescription
+        })
+      });
+      if (!res.ok) {
+        throw new Error("Failed to connect to the Socratic AI refinement server.");
+      }
+      const data = await res.json();
+      setScopingBrief(data);
+      setRefinedTitle(data.refined_title);
+      setRefinedProblem(data.refined_problem);
+      setSelectedQuestion(data.suggested_questions[0] || "");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "An unexpected error occurred during refinement.");
+    } finally {
+      setIsScoping(false);
+    }
   };
 
   const handleNextStep = () => {
@@ -139,51 +186,202 @@ export default function NewProjectWizardPage() {
       {/* STEP 1: Topic */}
       {step === 1 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="w-title">Working Title</label>
-            <input
-              id="w-title"
-              type="text"
-              className="text-field"
-              placeholder="e.g. Dynamic Multi-Agent Routing in Graduate Pedagogy"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
+          
+          {isScoping ? (
+            <div style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "var(--radius-md)",
+              padding: "40px 24px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "20px",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <div style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                border: "3px solid var(--border-color)",
+                borderTopColor: "var(--accent-blue)",
+                animation: "spin 1s linear infinite"
+              }}></div>
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}} />
+              <div>
+                <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>Refining Academic Bounds...</h3>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "6px", maxWidth: "420px", margin: "6px auto 0" }}>
+                  Socratic AI is mapping your problem context, auditing objectives, and generating socratic research angles to optimize database queries.
+                </p>
+              </div>
+            </div>
+          ) : scopingBrief ? (
+            <div style={{
+              background: "rgba(15, 23, 42, 0.02)",
+              border: "1.5px solid var(--accent-blue)",
+              borderRadius: "var(--radius-md)",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "18px",
+              boxShadow: "0 4px 20px rgba(37, 99, 235, 0.06)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px" }}>
+                <span style={{ fontSize: "18px" }}>✨</span>
+                <span style={{ fontWeight: 600, fontSize: "15px", color: "var(--accent-blue)" }}>Socratic AI Refined Scope</span>
+              </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="w-desc">Subject Area & Degree Level</label>
-            <select
-              id="w-desc"
-              className="text-field"
-              value={subjectArea}
-              onChange={(e) => setSubjectArea(e.target.value)}
-              style={{ background: "var(--bg-card)" }}
-            >
-              <option value="Graduate Seminar">Graduate Seminar (Masters/M.Phil)</option>
-              <option value="Doctoral Dissertation">Doctoral Dissertation (Ph.D.)</option>
-              <option value="Undergraduate Honors">Undergraduate Honors Thesis</option>
-            </select>
-          </div>
+              <div className="form-group">
+                <label className="form-label" style={{ color: "var(--accent-blue)", fontWeight: 600 }}>Refined Working Title</label>
+                <input
+                  type="text"
+                  className="text-field"
+                  value={refinedTitle}
+                  onChange={(e) => setRefinedTitle(e.target.value)}
+                  style={{ borderColor: "var(--accent-blue)", background: "var(--bg-card)" }}
+                  required
+                />
+              </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="w-topic">Research Context & Problem Statement</label>
-            <textarea
-              id="w-topic"
-              className="text-area"
-              placeholder="Provide 2-3 sentences explaining your core research hypothesis and target objectives..."
-              value={topicDescription}
-              onChange={(e) => setTopicDescription(e.target.value)}
-              required
-            />
-          </div>
+              <div className="form-group">
+                <label className="form-label" style={{ color: "var(--accent-blue)", fontWeight: 600 }}>Expanded Problem Context & Statement</label>
+                <textarea
+                  className="text-area"
+                  value={refinedProblem}
+                  onChange={(e) => setRefinedProblem(e.target.value)}
+                  style={{ minHeight: "120px", borderColor: "var(--accent-blue)", background: "var(--bg-card)" }}
+                  required
+                />
+              </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
-            <button type="button" className="btn btn-primary" onClick={handleNextStep}>
-              Next: Define Question
-            </button>
-          </div>
+              <div className="form-group">
+                <label className="form-label" style={{ color: "var(--accent-blue)", fontWeight: 600 }}>Selectable Focused Research Angles</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+                  {scopingBrief.suggested_questions.map((q: string, idx: number) => (
+                    <label
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "10px",
+                        padding: "12px",
+                        borderRadius: "6px",
+                        border: `1px solid ${selectedQuestion === q ? "var(--accent-blue)" : "var(--border-color)"}`,
+                        background: selectedQuestion === q ? "var(--bg-blue-soft)" : "var(--bg-card)",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        lineHeight: 1.4,
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="suggested-q"
+                        value={q}
+                        checked={selectedQuestion === q}
+                        onChange={() => setSelectedQuestion(q)}
+                        style={{ marginTop: "3px" }}
+                      />
+                      <span>{q}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", borderTop: "1px solid var(--border-color)", paddingTop: "16px" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setScopingBrief(null)}
+                >
+                  Reset Topic
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-accent"
+                  onClick={() => {
+                    setTitle(refinedTitle);
+                    setTopicDescription(refinedProblem);
+                    setInitialQuestion(selectedQuestion);
+                    // Proactively bypass Step 2 (Manual Question Formulation) and go directly to Step 3 (Sources selection)
+                    setStep(3);
+                  }}
+                >
+                  Apply Refined Scope & Proceed →
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="form-group">
+                <label className="form-label" htmlFor="w-title">Working Title</label>
+                <input
+                  id="w-title"
+                  type="text"
+                  className="text-field"
+                  placeholder="e.g. Dynamic Multi-Agent Routing in Graduate Pedagogy"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="w-desc">Subject Area & Degree Level</label>
+                <select
+                  id="w-desc"
+                  className="text-field"
+                  value={subjectArea}
+                  onChange={(e) => setSubjectArea(e.target.value)}
+                  style={{ background: "var(--bg-card)" }}
+                >
+                  <option value="Graduate Seminar">Graduate Seminar (Masters/M.Phil)</option>
+                  <option value="Doctoral Dissertation">Doctoral Dissertation (Ph.D.)</option>
+                  <option value="Undergraduate Honors">Undergraduate Honors Thesis</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="w-topic">Research Context & Problem Statement</label>
+                <textarea
+                  id="w-topic"
+                  className="text-area"
+                  placeholder="Provide 2-3 sentences explaining your core research hypothesis and target objectives..."
+                  value={topicDescription}
+                  onChange={(e) => setTopicDescription(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ background: "var(--bg-subtle)", padding: "16px", border: "1px solid var(--border-color)", borderRadius: "8px", display: "flex", gap: "12px", alignItems: "flex-start", marginTop: "6px" }}>
+                <span style={{ fontSize: "18px" }}>💡</span>
+                <div>
+                  <span style={{ fontWeight: 600, fontSize: "13px", display: "block" }}>Veritas Token-Saver Pre-Scoping</span>
+                  <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.4, marginTop: "2px" }}>
+                    Veritas requires AI pre-scoping before launching research. Socratic AI will expand your context, audit your objectives, and recommend focused academic angles to prevent token waste and irrelevant database queries.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+                <button
+                  type="button"
+                  className="btn btn-accent"
+                  onClick={handleRefineScope}
+                  disabled={!title.trim() || !topicDescription.trim()}
+                >
+                  ✨ Verify & Refine with Socratic AI
+                </button>
+              </div>
+            </>
+          )}
+          
         </div>
       )}
 

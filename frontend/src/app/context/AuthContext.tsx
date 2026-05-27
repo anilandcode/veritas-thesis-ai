@@ -15,6 +15,8 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  activeThesisId: string | null;
+  setActiveThesisId: (id: string | null) => void;
   login: (email: string, password?: string, fullName?: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   loginMock: (email: string, fullName?: string) => void;
@@ -28,6 +30,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeThesisId, setActiveThesisIdState] = useState<string | null>(null);
+
+  // Load active thesis ID on mount
+  useEffect(() => {
+    const savedThesisId = localStorage.getItem("veritas_active_thesis_id");
+    if (savedThesisId) {
+      setActiveThesisIdState(savedThesisId);
+    }
+  }, []);
+
+  const setActiveThesisId = (id: string | null) => {
+    setActiveThesisIdState(id);
+    if (id) {
+      localStorage.setItem("veritas_active_thesis_id", id);
+    } else {
+      localStorage.removeItem("veritas_active_thesis_id");
+    }
+  };
 
   // Load token & user from localStorage on mount
   useEffect(() => {
@@ -179,6 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       isAuthenticated: !!token,
       isLoading,
+      activeThesisId,
+      setActiveThesisId,
       login,
       register,
       loginMock,

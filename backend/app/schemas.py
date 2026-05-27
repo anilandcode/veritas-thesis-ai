@@ -73,6 +73,15 @@ class ResearchPaperOut(BaseModel):
         from_attributes = True
 
 # Socratic Chat Schemas
+class ScopeRefinementIn(BaseModel):
+    title: str
+    topic_description: str
+
+class ScopeRefinementOut(BaseModel):
+    refined_title: str
+    refined_problem: str
+    suggested_questions: List[str]
+
 class SocraticChatInput(BaseModel):
     thesis_id: int
     message: str

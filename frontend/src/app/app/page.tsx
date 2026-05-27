@@ -14,41 +14,68 @@ interface ThesisData {
 }
 
 export default function ResearchHomePage() {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, setActiveThesisId, activeThesisId } = useAuth();
   const router = useRouter();
   const [activeThesis, setActiveThesis] = useState<ThesisData | null>(null);
+  const [projectsList, setProjectsList] = useState<ThesisData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchActiveProject = async () => {
+    const fetchWorkspaceData = async () => {
       setIsLoading(true);
-      const savedThesisId = localStorage.getItem("veritas_active_thesis_id");
-      
-      if (!savedThesisId) {
-        setIsLoading(false);
-        return;
-      }
+      const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const headers = getAuthHeaders();
 
+      // 1. Fetch all user projects (theses)
+      let theses: ThesisData[] = [];
       try {
-        const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-        const res = await fetch(`${BACKEND_URL}/thesis/${savedThesisId}`, {
-          headers: getAuthHeaders()
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setActiveThesis(data);
-        } else {
-          localStorage.removeItem("veritas_active_thesis_id");
+        const listRes = await fetch(`${BACKEND_URL}/thesis`, { headers });
+        if (listRes.ok) {
+          theses = await listRes.json();
+          setProjectsList(theses);
         }
       } catch (err) {
-        console.error("Failed to load active project", err);
-      } finally {
-        setIsLoading(false);
+        console.error("Failed to load projects list", err);
       }
+
+      // 2. Determine active project
+      const savedThesisId = localStorage.getItem("veritas_active_thesis_id");
+      let activeLoaded = false;
+
+      if (savedThesisId && theses.length > 0) {
+        const found = theses.find(t => t.id.toString() === savedThesisId);
+        if (found) {
+          setActiveThesis(found);
+          setActiveThesisId(found.id.toString());
+          activeLoaded = true;
+        }
+      }
+
+      // Fallback: If no active thesis set, but theses list exists, auto-activate the most recent one
+      if (!activeLoaded && theses.length > 0) {
+        const mostRecent = theses[0];
+        setActiveThesis(mostRecent);
+        setActiveThesisId(mostRecent.id.toString());
+      } else if (theses.length === 0) {
+        setActiveThesis(null);
+        setActiveThesisId(null);
+      }
+
+      setIsLoading(false);
     };
 
-    fetchActiveProject();
-  }, [getAuthHeaders]);
+    fetchWorkspaceData();
+  }, [getAuthHeaders, activeThesisId, setActiveThesisId]);
+
+  const handleSwitchProject = (id: number) => {
+    setActiveThesisId(id.toString());
+  };
+
+  const handleCreateNewProject = () => {
+    // Clear active thesis so wizard starts fresh
+    localStorage.removeItem("veritas_active_thesis_id");
+    router.push("/app/projects/new");
+  };
 
   if (isLoading) {
     return (
@@ -59,28 +86,30 @@ export default function ResearchHomePage() {
     );
   }
 
+  const otherProjects = projectsList.filter(p => activeThesis === null || p.id !== activeThesis.id);
+
   return (
     <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto", width: "100%", overflowY: "auto", height: "100%" }}>
-      {/* Welcome Head */}
+      
+      {/* Welcome Head - Always expose "Start New Project" button */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
         <div>
           <span style={{ fontSize: "12px", color: "var(--accent-blue)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Veritas Home</span>
           <h1 style={{ fontSize: "28px", fontWeight: 600, color: "var(--text-primary)", marginTop: "4px" }}>My Research Workspace</h1>
         </div>
-        {!activeThesis && (
-          <Link href="/app/projects/new" className="btn btn-accent">
-            <span>+</span> Start research project
-          </Link>
-        )}
+        <button onClick={handleCreateNewProject} className="btn btn-accent" style={{ height: "40px", fontSize: "13px" }}>
+          <span>+</span> Start new project
+        </button>
       </div>
 
       {activeThesis ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+          
           {/* Active Project Highlight */}
           <div className="panel" style={{ display: "flex", flexDirection: "column", gap: "20px", borderLeft: "4px solid var(--accent-blue)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <span className="badge badge-source-linked" style={{ marginBottom: "8px" }}>Active Thesis</span>
+                <span className="badge badge-source-linked" style={{ marginBottom: "8px" }}>Active Thesis Canvas</span>
                 <h2 style={{ fontSize: "20px", fontWeight: 600, color: "var(--text-primary)" }}>{activeThesis.title}</h2>
                 <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "6px", lineHeight: 1.5 }}>
                   {activeThesis.topic_description}
@@ -108,6 +137,34 @@ export default function ResearchHomePage() {
               </div>
             </div>
           </div>
+
+          {/* Other Projects Library List */}
+          {otherProjects.length > 0 && (
+            <div>
+              <h2 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "16px" }}>
+                Other Projects Library ({otherProjects.length})
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {otherProjects.map(project => (
+                  <div key={project.id} className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px" }}>
+                    <div>
+                      <h3 style={{ fontSize: "14.5px", fontWeight: 600, color: "var(--text-primary)" }}>{project.title}</h3>
+                      <span style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
+                        Created {new Date(project.created_at).toLocaleDateString()} · Status: {project.status}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handleSwitchProject(project.id)} 
+                      className="btn btn-secondary"
+                      style={{ height: "32px", fontSize: "12px", padding: "0 14px" }}
+                    >
+                      Activate Workspace
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quick Tasks Grid */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
@@ -139,9 +196,9 @@ export default function ResearchHomePage() {
           <div className="empty-state-desc" style={{ fontSize: "14px", marginTop: "4px" }}>
             Veritas AI will act as your Socratic thesis writing mentor. Create a new research project to define your topic, discover databases, and build a literature-supported evidence map.
           </div>
-          <Link href="/app/projects/new" className="btn btn-primary" style={{ marginTop: "12px" }}>
+          <button onClick={handleCreateNewProject} className="btn btn-primary" style={{ marginTop: "12px" }}>
             Start a new research project
-          </Link>
+          </button>
         </div>
       )}
     </div>

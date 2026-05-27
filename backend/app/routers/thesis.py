@@ -8,6 +8,17 @@ from app.routers.dependencies import get_current_user
 
 router = APIRouter(prefix="/thesis", tags=["Theses"])
 
+@router.get("", response_model=List[schemas.ThesisOut])
+def list_theses(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    theses = db.query(models.Thesis).filter(
+        models.Thesis.user_id == current_user.id
+    ).order_by(models.Thesis.created_at.desc()).all()
+    return theses
+
+
 @router.post("/create", response_model=schemas.ThesisOut)
 def create_thesis(
     thesis_in: schemas.ThesisCreate, 
