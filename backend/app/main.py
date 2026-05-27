@@ -10,29 +10,30 @@ Base.metadata.create_all(bind=engine)
 # Auto-apply database schema column migrations (SQLite & PostgreSQL compatible)
 from sqlalchemy import text
 try:
-    with engine.begin() as conn:
-        # 1. users table schema migrations
-        for col, col_type in [
-            ("is_supervisor", "BOOLEAN DEFAULT FALSE"),
-            ("is_dean", "BOOLEAN DEFAULT FALSE"),
-            ("institution_id", "INTEGER"),
-            ("department_id", "INTEGER")
-        ]:
-            try:
+    # 1. users table schema migrations
+    for col, col_type in [
+        ("is_supervisor", "BOOLEAN DEFAULT FALSE"),
+        ("is_dean", "BOOLEAN DEFAULT FALSE"),
+        ("institution_id", "INTEGER"),
+        ("department_id", "INTEGER")
+    ]:
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
-            except Exception:
-                pass  # Column already exists or table doesn't have connection
-                
-        # 2. research_papers table schema migrations
-        for col, col_type in [
-            ("is_retracted", "BOOLEAN DEFAULT FALSE"),
-            ("retraction_details", "TEXT"),
-            ("licence", "VARCHAR")
-        ]:
-            try:
+        except Exception:
+            pass  # Column already exists or transaction rolled back
+            
+    # 2. research_papers table schema migrations
+    for col, col_type in [
+        ("is_retracted", "BOOLEAN DEFAULT FALSE"),
+        ("retraction_details", "TEXT"),
+        ("licence", "VARCHAR")
+    ]:
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE research_papers ADD COLUMN {col} {col_type}"))
-            except Exception:
-                pass  # Column already exists
+        except Exception:
+            pass  # Column already exists or transaction rolled back
 except Exception as e:
     print(f"[Migration Warning] Auto-migrations skipped or failed: {str(e)}")
 
