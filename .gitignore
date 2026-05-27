@@ -21,3 +21,5 @@ next-env.d.ts
 .DS_Store
 **/*.pem
 **/*.log*
+.vercel
+.env*
