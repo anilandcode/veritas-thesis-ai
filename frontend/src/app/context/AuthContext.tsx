@@ -15,7 +15,9 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, fullName?: string) => void;
+  login: (email: string, password?: string, fullName?: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string) => Promise<void>;
+  loginMock: (email: string, fullName?: string) => void;
   logout: () => void;
   getAuthHeaders: () => Record<string, string>;
 }
@@ -45,15 +47,105 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  // Standard login using dynamic mock tokens linked to database autoprovisioning
-  const login = (email: string, fullName: string = "Graduate Scholar") => {
-    // Generate secure mock JWT for development fallback (which triggers backend autoprovisioning)
+  // Secure asynchronous login utilizing either standard JWT or mock fallback
+  const login = async (email: string, password?: string, fullName?: string) => {
+    const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+    // 1. Fallback to offline/mock mode if password is not provided
+    if (!password) {
+      loginMock(email, fullName || "Graduate Scholar");
+      return;
+    }
+
+    // 2. Perform production JWT login request
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Invalid email or password.");
+      }
+
+      const data = await response.json();
+      const secureToken = data.access_token;
+      
+      const verifiedUser: User = {
+        id: data.user.id,
+        email: data.user.email,
+        full_name: data.user.full_name,
+        is_dean: data.user.is_dean,
+        is_supervisor: data.user.is_supervisor
+      };
+
+      setToken(secureToken);
+      setUser(verifiedUser);
+      
+      localStorage.setItem("veritas_token", secureToken);
+      localStorage.setItem("veritas_user", JSON.stringify(verifiedUser));
+    } catch (e: any) {
+      console.error("[Auth Context] Production login failed:", e);
+      throw e;
+    }
+  };
+
+  // Secure asynchronous registration
+  const register = async (email: string, password: string, fullName: string) => {
+    const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: fullName
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Signup failed. Please try again.");
+      }
+
+      const data = await response.json();
+      const secureToken = data.access_token;
+      
+      const verifiedUser: User = {
+        id: data.user.id,
+        email: data.user.email,
+        full_name: data.user.full_name,
+        is_dean: data.user.is_dean,
+        is_supervisor: data.user.is_supervisor
+      };
+
+      setToken(secureToken);
+      setUser(verifiedUser);
+      
+      localStorage.setItem("veritas_token", secureToken);
+      localStorage.setItem("veritas_user", JSON.stringify(verifiedUser));
+    } catch (e: any) {
+      console.error("[Auth Context] Production signup failed:", e);
+      throw e;
+    }
+  };
+
+  // Legacy dynamic mock token generation for offline/gated rapid testing
+  const loginMock = (email: string, fullName: string = "Graduate Scholar") => {
     const secureToken = `mock_user_${email.split("@")[0]}`;
     const is_dean = email.includes("dean") || secureToken.startsWith("mock_user_dean");
     const is_supervisor = email.includes("advisor") || email.includes("supervisor") || secureToken.startsWith("mock_user_advisor") || secureToken === "mock_user_system";
     
     const newUser: User = {
-      id: Date.now(), // Local client ID
+      id: Date.now(),
       email: email,
       full_name: fullName,
       is_dean,
@@ -88,6 +180,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!token,
       isLoading,
       login,
+      register,
+      loginMock,
       logout,
       getAuthHeaders
     }}>

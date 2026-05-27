@@ -63,11 +63,18 @@ def get_current_user(
     try:
         # Decode token
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
-        email: str = payload.get("sub") or payload.get("email")
-        if email is None:
+        sub = payload.get("sub")
+        email = payload.get("email")
+        
+        # Determine email fallback
+        resolved_email = email
+        if not resolved_email and sub and "@" in sub:
+            resolved_email = sub
+            
+        if sub is None and email is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token payload is invalid (missing subject/email)",
+                detail="Token payload is invalid (missing subject or email)",
                 headers={"WWW-Authenticate": "Bearer"},
             )
     except jwt.ExpiredSignatureError:
@@ -84,12 +91,24 @@ def get_current_user(
         )
 
     # 3. Retrieve User or Create on the fly
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = None
+    if sub and sub.isdigit():
+        user = db.query(models.User).filter(models.User.id == int(sub)).first()
+    
+    if not user and resolved_email:
+        user = db.query(models.User).filter(models.User.email == resolved_email).first()
+        
     if not user:
+        if not resolved_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token payload is invalid (missing email claim for autoprovisioning)",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         # User signed up via Clerk/Identity provider first; auto-provision in local DB
-        full_name = payload.get("name", email.split("@")[0].title())
+        full_name = payload.get("name", resolved_email.split("@")[0].title())
         user = models.User(
-            email=email,
+            email=resolved_email,
             hashed_password=f"oauth_sso_synthesis_key",
             full_name=full_name,
             is_active=True
@@ -97,7 +116,7 @@ def get_current_user(
         db.add(user)
         db.commit()
         db.refresh(user)
-        print(f"[Auth Security] Auto-provisioned user {email} via authenticated JWT.")
+        print(f"[Auth Security] Auto-provisioned user {resolved_email} via authenticated JWT.")
 
     if not user.is_active:
         raise HTTPException(
