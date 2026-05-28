@@ -5,6 +5,86 @@ from app import models, schemas
 import datetime
 from app.services.prompt_gating import intercept_cheating_attempts
 
+def compile_dynamic_socratic_context(thesis_id: int, thesis, active_section, db: Session) -> str:
+    """
+    Synthesizes a highly customized academic context explanation based on the thesis title,
+    topic description, swarmed research papers, and verified claims.
+    """
+    papers_list = db.query(models.ResearchPaper).filter(models.ResearchPaper.thesis_id == thesis_id).all()
+    claims_list = db.query(models.VerifiedClaim).filter(
+        models.VerifiedClaim.thesis_id == thesis_id,
+        models.VerifiedClaim.verification_status == "Verified"
+    ).all()
+    
+    intro = (
+        f"### 🦉 Topic Context & Literature Overview\n\n"
+        f"Let's explore the academic context of your research topic: **\"{thesis.title}\"**.\n\n"
+        f"Your study addresses a critical domain defined by: *{thesis.topic_description}*.\n\n"
+    )
+    
+    lit_section = ""
+    if papers_list:
+        paper_citations = []
+        for p in papers_list[:3]:
+            author_surname = p.authors.split(",")[0].split(" ")[-1] if p.authors else "Scholar"
+            paper_citations.append(f"- **\"{p.title}\"** ({author_surname}, {p.year or 2025}) — DOI: {p.doi or 'N/A'}")
+        lit_section = (
+            "**Key Academic Benchmarks (Swarmed Literature)**:\n"
+            "According to the peer-reviewed sources harvested in your Literature Library, the academic consensus is anchored by:\n"
+            + "\n".join(paper_citations) + "\n\n"
+        )
+    else:
+        lit_section = (
+            "**Key Academic Benchmarks**:\n"
+            "We haven't indexed specific papers for this project yet. Once your Literature Library swarms new sources, "
+            "they will form the academic backbone of your context here.\n\n"
+        )
+        
+    claims_section = ""
+    if claims_list:
+        claim_items = []
+        for c in claims_list[:2]:
+            claim_items.append(f"- \"{c.claim_text}\"")
+        claims_section = (
+            "**Verified Scientific Claims**:\n"
+            "Veritas has mapped and verified the following factual claims in these papers:\n"
+            + "\n".join(claim_items) + "\n\n"
+        )
+        
+    active_name = active_section.section_title if active_section else "Context & Relevance"
+    hints_text = f"*{active_section.guiding_hints}*" if active_section else "Establish the broader domain of your topic."
+    
+    socratic_questions = (
+        "**Socratic Pedagogical Framework**:\n"
+        "To write a flawless introductory background, we guide you using the **Scope → Consensus → Tension** framework:\n"
+        "1. *Scope (General Domain)*: Where does your topic sit in the broader field?\n"
+        "2. *Consensus (Historical Context)*: What has been established by prior researchers?\n"
+        "3. *Tension (Modern Shift)*: What recent observation or research gap challenges that baseline?\n\n"
+        f"**Active Drafting Target**: **{active_name}**\n"
+        f"Guideline: {hints_text}\n\n"
+        "How do you plan to frame this transition? Which of the swarmed sources above do you feel best supports your planned argument?"
+    )
+    
+    return intro + lit_section + claims_section + socratic_questions
+
+def get_dynamic_socratic_suggestions(papers_list, active_section) -> list:
+    suggestions = []
+    if papers_list:
+        first_author = papers_list[0].authors.split(",")[0].split(" ")[-1] if papers_list[0].authors else "Scholar"
+        first_year = papers_list[0].year or 2025
+        suggestions.append(f"How does {first_author} ({first_year}) support my case?")
+    else:
+        suggestions.append("How do I link research to my topic?")
+        
+    suggestions.append("What are the key findings of these papers?")
+    
+    if active_section:
+        suggestions.append(f"Help me draft {active_section.section_title}")
+    else:
+        suggestions.append("Review my introduction outline")
+        
+    return suggestions
+
 def generate_socratic_response(thesis_id: int, user_message: str, section: str, db: Session) -> schemas.SocraticChatResponse:
     # 1. Fetch thesis, shadow thesis, active drafting section, and previous chat history
     thesis = db.query(models.Thesis).filter(models.Thesis.id == thesis_id).first()
@@ -146,26 +226,11 @@ def generate_socratic_response(thesis_id: int, user_message: str, section: str, 
             ]
         grading = "Outlining state. Socratic guide provided verified outline skeleton."
         
-    elif "fact" in msg or "research" in msg or "reference" in msg or "source" in msg:
-        hints = ""
-        if active_section and active_section.guiding_hints:
-            hints = f"For your active section (**{active_section.section_title}**), keep in mind: {active_section.guiding_hints}\n\n"
-            
-        response_text = (
-            "According to verified literature in our shadow research database, recent studies "
-            "highlight a significant trend: Socratic active learning drops plagiarism rates "
-            "and enhances critical synthesis (Scholar & Academic, 2025). Furthermore, ethical guidelines "
-            "suggest prioritizing student agency over passive AI writing (Doe & Smith, 2026).\n\n"
-            f"{hints}"
-            "How might you incorporate these verified citations into your argument? What is your stance "
-            "on active synthesis vs. passive retrieval?"
-        )
-        suggestions = [
-            "How does Scholar & Academic (2025) support my case?",
-            "What did Doe & Smith (2026) find exactly?",
-            f"Help me write {active_section.section_title}" if active_section else "Review my introduction"
-        ]
-        grading = "Student requested evidence. Socratic guide provided citation hints and steered based on active section."
+    elif any(k in msg for k in ["fact", "research", "reference", "source", "context", "explain", "theme", "finding", "literature"]):
+        response_text = compile_dynamic_socratic_context(thesis_id, thesis, active_section, db)
+        papers_list = db.query(models.ResearchPaper).filter(models.ResearchPaper.thesis_id == thesis_id).all()
+        suggestions = get_dynamic_socratic_suggestions(papers_list, active_section)
+        grading = f"Context synthesis for topic: '{thesis.title}'. Steered student using swarmed literature and verified claims."
         
     else:
         if active_section:
@@ -396,26 +461,11 @@ async def generate_socratic_stream(thesis_id: int, user_message: str, section: s
             ]
         grading = "Outlining state. Socratic guide provided verified outline skeleton."
         
-    elif "fact" in msg or "research" in msg or "reference" in msg or "source" in msg:
-        hints = ""
-        if active_section and active_section.guiding_hints:
-            hints = f"For your active section (**{active_section.section_title}**), keep in mind: {active_section.guiding_hints}\n\n"
-            
-        response_text = (
-            "According to verified literature in our shadow research database, recent studies "
-            "highlight a significant trend: Socratic active learning drops plagiarism rates "
-            "and enhances critical synthesis (Scholar & Academic, 2025). Furthermore, ethical guidelines "
-            "suggest prioritizing student agency over passive AI writing (Doe & Smith, 2026).\n\n"
-            f"{hints}"
-            "How might you incorporate these verified citations into your argument? What is your stance "
-            "on active synthesis vs. passive retrieval?"
-        )
-        suggestions = [
-            "How does Scholar & Academic (2025) support my case?",
-            "What did Doe & Smith (2026) find exactly?",
-            f"Help me write {active_section.section_title}" if active_section else "Review my introduction"
-        ]
-        grading = "Student requested evidence. Socratic guide provided citation hints and steered based on active section."
+    elif any(k in msg for k in ["fact", "research", "reference", "source", "context", "explain", "theme", "finding", "literature"]):
+        response_text = compile_dynamic_socratic_context(thesis_id, thesis, active_section, db)
+        papers_list = db.query(models.ResearchPaper).filter(models.ResearchPaper.thesis_id == thesis_id).all()
+        suggestions = get_dynamic_socratic_suggestions(papers_list, active_section)
+        grading = f"Context synthesis for topic: '{thesis.title}'. Steered student using swarmed literature and verified claims."
         
     else:
         if active_section:

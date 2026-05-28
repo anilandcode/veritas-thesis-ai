@@ -111,6 +111,7 @@ export default function WritingStudioPage() {
 
   const [compiledScaffold, setCompiledScaffold] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [isContextGuideOpen, setIsContextGuideOpen] = useState(false);
 
   const handleCompileScaffold = () => {
     let result = "";
@@ -820,6 +821,65 @@ export default function WritingStudioPage() {
               </p>
             </div>
 
+            {/* Pedagogical Context Explainer Accordion */}
+            <div style={{
+              background: "var(--bg-subtle)",
+              border: "1.5px solid var(--border-color)",
+              borderRadius: "8px",
+              padding: "12px 14px",
+              cursor: "pointer",
+              transition: "all 0.2s ease-in-out"
+            }}
+            onClick={() => setIsContextGuideOpen(!isContextGuideOpen)}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  💡 What is Academic Context?
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--text-tertiary)", transform: isContextGuideOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
+                  ▼
+                </span>
+              </div>
+              
+              {isContextGuideOpen && (
+                <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px", borderTop: "1px solid var(--border-color)", paddingTop: "10px" }} onClick={(e) => e.stopPropagation()}>
+                  <p style={{ fontSize: "11.5px", color: "var(--text-secondary)", lineHeight: 1.45, margin: 0 }}>
+                    In academic writing, **Context & Relevance** is not just background information; it is the logical bridge that introduces your research area and justifies why your study is necessary.
+                  </p>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "var(--bg-card)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--accent-blue)", background: "rgba(37, 99, 235, 0.08)", padding: "1px 5px", borderRadius: "4px", height: "fit-content" }}>1</span>
+                      <div>
+                        <strong style={{ fontSize: "11px", display: "block", color: "var(--text-primary)" }}>Scope / General Domain</strong>
+                        <span style={{ fontSize: "10.5px", color: "var(--text-tertiary)", lineHeight: 1.4 }}>Where does your research territory sit? Establish the broad domain (e.g. localized pharmacological latency).</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: "flex", gap: "6px", borderTop: "1px solid var(--border-subtle)", paddingTop: "6px" }}>
+                      <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--accent-blue)", background: "rgba(37, 99, 235, 0.08)", padding: "1px 5px", borderRadius: "4px", height: "fit-content" }}>2</span>
+                      <div>
+                        <strong style={{ fontSize: "11px", display: "block", color: "var(--text-primary)" }}>Historical Context / Consensus</strong>
+                        <span style={{ fontSize: "10.5px", color: "var(--text-tertiary)", lineHeight: 1.4 }}>What has scientific literature historically agreed upon or assumed? Establish the baseline.</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: "flex", gap: "6px", borderTop: "1px solid var(--border-subtle)", paddingTop: "6px" }}>
+                      <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--accent-blue)", background: "rgba(37, 99, 235, 0.08)", padding: "1px 5px", borderRadius: "4px", height: "fit-content" }}>3</span>
+                      <div>
+                        <strong style={{ fontSize: "11px", display: "block", color: "var(--text-primary)" }}>Modern Tension / Disruption</strong>
+                        <span style={{ fontSize: "10.5px", color: "var(--text-tertiary)", lineHeight: 1.4 }}>What recent clinical report, empirical gap, or new observation challenges the old historical consensus?</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: "10.5px", color: "var(--text-tertiary)", lineHeight: 1.4, margin: 0, fontStyle: "italic" }}>
+                    💡 **Tip:** Use the Socratic Scaffolder inputs below to draft these three points. Veritas will compile them into a seamless academic paragraph template!
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div style={{ height: "1px", background: "var(--border-color)" }}></div>
 
             {/* Context & Relevance Questionnaire */}
@@ -1011,6 +1071,73 @@ export default function WritingStudioPage() {
                 </div>
               </div>
             )}
+
+            {/* Swarmed Topic Context Hub */}
+            <div style={{
+              background: "rgba(15, 23, 42, 0.02)",
+              border: "1px dashed var(--border-strong)",
+              borderRadius: "8px",
+              padding: "16px",
+              marginTop: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px"
+            }}>
+              <div>
+                <span style={{ fontSize: "11px", color: "var(--accent-blue)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>📚 Swarmed Topic Context</span>
+                <p style={{ fontSize: "11px", color: "var(--text-tertiary)", marginTop: "2px", lineHeight: 1.4 }}>
+                  Use these top peer-reviewed sources and verified claims to form the core context of your thesis.
+                </p>
+              </div>
+
+              {/* Real Papers List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <strong style={{ fontSize: "10.5px", color: "var(--text-secondary)", textTransform: "uppercase" }}>Discovered Literature:</strong>
+                {papers.length === 0 ? (
+                  <span style={{ fontSize: "11px", color: "var(--text-tertiary)", fontStyle: "italic" }}>No literature papers swarmed yet.</span>
+                ) : (
+                  papers.slice(0, 2).map((paper) => (
+                    <div key={paper.id} style={{ padding: "8px 10px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "6px", fontSize: "11.5px" }}>
+                      <span style={{ fontWeight: 600, display: "block", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        📄 {paper.title}
+                      </span>
+                      <span style={{ fontSize: "10px", color: "var(--text-secondary)", display: "block", marginTop: "2px" }}>
+                        {paper.authors?.split(",")?.[0]} · {paper.year}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Real Claims List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+                <strong style={{ fontSize: "10.5px", color: "var(--text-secondary)", textTransform: "uppercase" }}>Verified Claims to Steer:</strong>
+                {verifiedClaims.length === 0 ? (
+                  <span style={{ fontSize: "11px", color: "var(--text-tertiary)", fontStyle: "italic" }}>No verified claims mapped.</span>
+                ) : (
+                  verifiedClaims.filter(c => c.verification_status === "Verified").slice(0, 2).map((claim) => (
+                    <div key={claim.id} style={{ padding: "8px 10px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "6px", fontSize: "11px", color: "var(--text-secondary)", fontStyle: "italic" }}>
+                      ✓ "{claim.claim_text.substring(0, 75)}..."
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div style={{ height: "1px", background: "var(--border-color)", margin: "4px 0" }}></div>
+
+              {/* Proactive Mentor Tutor Trigger */}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  handleSendMessage("Please explain the core academic context, key themes, and major findings of the swarmed literature in my library.");
+                  setRightPanelTab("mentor");
+                }}
+                style={{ width: "100%", height: "32px", fontSize: "11.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                🦉 Explain Topic Context
+              </button>
+            </div>
           </div>
         ) : rightPanelTab === "mentor" ? (
           <div style={{ display: "flex", flexDirection: "column", height: "calc(100% - 48px)" }}>
