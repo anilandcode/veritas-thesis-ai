@@ -248,7 +248,7 @@ export default function WritingStudioPage() {
           },
           body: JSON.stringify({
             section_key: activeSectionKey,
-            draft_text: documentText
+            text: documentText
           })
         });
 
@@ -260,8 +260,7 @@ export default function WritingStudioPage() {
             ...getAuthHeaders()
           },
           body: JSON.stringify({
-            section_key: activeSectionKey,
-            draft_text: documentText
+            text: documentText
           })
         });
 
