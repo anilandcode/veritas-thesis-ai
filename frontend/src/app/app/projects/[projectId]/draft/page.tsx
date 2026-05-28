@@ -80,9 +80,9 @@ export default function WritingStudioPage() {
   const [comments, setComments] = useState<SupervisorComment[]>([]);
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null);
   const [isPaperModalOpen, setIsPaperModalOpen] = useState(false);
-
+ 
   // Mentor Chat Panel
-  const [rightPanelTab, setRightPanelTab] = useState<"mentor" | "evidence">("mentor");
+  const [rightPanelTab, setRightPanelTab] = useState<"mentor" | "evidence" | "scaffold">("scaffold");
   const [chatMessage, setChatMessage] = useState("");
   const [chatHistory, setChatHistory] = useState<SocraticMessage[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([
@@ -92,6 +92,46 @@ export default function WritingStudioPage() {
   ]);
   const [isSending, setIsSending] = useState(false);
   const [activeSteeringMessage, setActiveSteeringMessage] = useState<string | null>(null);
+
+  // Socratic Drafting Scaffolder States
+  const [ctxDomain, setCtxDomain] = useState("");
+  const [ctxBg, setCtxBg] = useState("");
+  const [ctxTension, setCtxTension] = useState("");
+
+  const [probGap, setProbGap] = useState("");
+  const [probTension, setProbTension] = useState("");
+  const [probConsequence, setProbConsequence] = useState("");
+
+  const [objAim, setObjAim] = useState("");
+  const [objScope, setObjScope] = useState("");
+  const [objQuestions, setObjQuestions] = useState("");
+
+  const [sigAcademic, setSigAcademic] = useState("");
+  const [sigPractical, setSigPractical] = useState("");
+
+  const [compiledScaffold, setCompiledScaffold] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCompileScaffold = () => {
+    let result = "";
+    if (activeSectionKey === "context") {
+      result = `In recent years, research in the domain of [${ctxDomain || "Insert Topic/Domain"}] has emerged as a critical focus of academic inquiry. Historically, scientific consensus has established that [${ctxBg || "Insert Historical Consensus"}]. However, a key inflection point has arisen because [${ctxTension || "Insert Recent Observation/Shift"}], necessitating a detailed investigation.`;
+    } else if (activeSectionKey === "problem") {
+      result = `Despite the relevance of this topic, contemporary approaches are fundamentally constrained by [${probGap || "Insert Current Gap/Limitation"}]. This limitation is particularly challenging because [${probTension || "Insert Educational/Clinical Tension"}]. Consequently, without addressing this gap, researchers risk [${probConsequence || "Insert Logical Consequence/Risk"}], leaving a critical vulnerability in the literature.`;
+    } else if (activeSectionKey === "objectives") {
+      result = `To address these challenges, the overarching aim of this study is to [${objAim || "Insert Primary Goal"}]. Specifically, this investigation will evaluate the dynamics of [${objScope || "Insert Conceptual Strategy/Variables"}]. To guide this process, we formulate the following core research questions: (1) [${objQuestions || "State 1-2 research questions"}].`;
+    } else if (activeSectionKey === "significance") {
+      result = `The theoretical and practical implications of this study are twofold. From an academic perspective, this work advances literature by [${sigAcademic || "Insert Academic/Theoretical Contribution"}]. From a practical standpoint, the resulting framework directly benefits [${sigPractical || "Insert Practical Beneficiaries"}] by offering a localized, highly reproducible model.`;
+    }
+    setCompiledScaffold(result);
+    setIsCopied(false);
+  };
+
+  const handleCopyScaffold = () => {
+    navigator.clipboard.writeText(compiledScaffold);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   // References
   const editorRef = useRef<HTMLTextAreaElement>(null);
@@ -713,20 +753,39 @@ export default function WritingStudioPage() {
         {/* Tab Headers */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border-color)", background: "var(--bg-card)", height: "48px", flexShrink: 0, alignItems: "center" }}>
           <button
+            onClick={() => {
+              setRightPanelTab("scaffold");
+              setCompiledScaffold("");
+            }}
+            style={{
+              flex: 1.2,
+              background: "transparent",
+              border: "none",
+              color: rightPanelTab === "scaffold" ? "var(--accent-blue)" : "var(--text-tertiary)",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+              height: "100%",
+              borderBottom: rightPanelTab === "scaffold" ? "2.5px solid var(--accent-blue)" : "2px solid transparent"
+            }}
+          >
+            📝 Drafting Scaffold
+          </button>
+          <button
             onClick={() => setRightPanelTab("mentor")}
             style={{
               flex: 1,
               background: "transparent",
               border: "none",
               color: rightPanelTab === "mentor" ? "var(--accent-blue)" : "var(--text-tertiary)",
-              fontSize: "12px",
+              fontSize: "11px",
               fontWeight: 600,
               cursor: "pointer",
               height: "100%",
               borderBottom: rightPanelTab === "mentor" ? "2.5px solid var(--accent-blue)" : "2px solid transparent"
             }}
           >
-            Socratic Mentor
+            🦉 Socratic Mentor
           </button>
           <button
             onClick={() => setRightPanelTab("evidence")}
@@ -735,18 +794,226 @@ export default function WritingStudioPage() {
               background: "transparent",
               border: "none",
               color: rightPanelTab === "evidence" ? "var(--accent-blue)" : "var(--text-tertiary)",
-              fontSize: "12px",
+              fontSize: "11px",
               fontWeight: 600,
               cursor: "pointer",
               height: "100%",
               borderBottom: rightPanelTab === "evidence" ? "2.5px solid var(--accent-blue)" : "2px solid transparent"
             }}
           >
-            Evidence Review
+            🔍 Evidence
           </button>
         </div>
 
-        {rightPanelTab === "mentor" ? (
+        {rightPanelTab === "scaffold" ? (
+          <div style={{ padding: "20px", overflowY: "auto", height: "calc(100% - 48px)", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <span style={{ fontSize: "11px", color: "var(--accent-blue)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Socratic Scaffolder</span>
+              <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", marginTop: "2px" }}>
+                {activeSectionKey === "context" && "Context & Relevance Helper"}
+                {activeSectionKey === "problem" && "Problem Statement Helper"}
+                {activeSectionKey === "objectives" && "Research Objectives Helper"}
+                {activeSectionKey === "significance" && "Significance of Study Helper"}
+                {!["context", "problem", "objectives", "significance"].includes(activeSectionKey) && "Drafting Scaffold Helper"}
+              </h3>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px", lineHeight: 1.45 }}>
+                Answer these simple Socratic questions to compile a structured sentence outline with academic transition starters.
+              </p>
+            </div>
+
+            <div style={{ height: "1px", background: "var(--border-color)" }}></div>
+
+            {/* Context & Relevance Questionnaire */}
+            {activeSectionKey === "context" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>1. Scope / General Domain</label>
+                  <input
+                    type="text"
+                    className="text-field"
+                    style={{ padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. Panadol medicine effects on Asian People"
+                    value={ctxDomain}
+                    onChange={(e) => setCtxDomain(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>2. Historical Context / Consensus</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. Panadol is a globally used analgesic with high efficacy in Western clinical trials"
+                    value={ctxBg}
+                    onChange={(e) => setCtxBg(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>3. Modern Tension / Recent Observation</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. clinical reports indicate variations in metabolic latency in Asian genetic pools"
+                    value={ctxTension}
+                    onChange={(e) => setCtxTension(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Problem Statement Questionnaire */}
+            {activeSectionKey === "problem" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>1. Current Gap / Limitation</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. existing dosing guidelines rely entirely on data collected from Western control cohorts"
+                    value={probGap}
+                    onChange={(e) => setProbGap(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>2. Core Practical / Empirical Tension</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. doctors must prescribe dosage blindly without regional bio-equivalence profiles"
+                    value={probTension}
+                    onChange={(e) => setProbTension(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>3. Logical Consequence / Risk</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. patient safety risks increase, or candidates suffer sub-therapeutic dosing"
+                    value={probConsequence}
+                    onChange={(e) => setProbConsequence(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Research Objectives Questionnaire */}
+            {activeSectionKey === "objectives" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>1. Primary Research Aim</label>
+                  <input
+                    type="text"
+                    className="text-field"
+                    style={{ padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. map localized metabolic tolerances and regulatory gaps"
+                    value={objAim}
+                    onChange={(e) => setObjAim(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>2. Strategy / Target Variables</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. correlating pharmacokinetic half-lives with localized genetic markers"
+                    value={objScope}
+                    onChange={(e) => setObjScope(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>3. Sub-Questions / Hypotheses</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "50px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. Do regional liver enzyme variations correlate with altered clearance latency?"
+                    value={objQuestions}
+                    onChange={(e) => setObjQuestions(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Significance of Study Questionnaire */}
+            {activeSectionKey === "significance" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>1. Theoretical / Academic Value</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "70px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. bridging the gap between pharmacogenetic literature and public drug regulation registries"
+                    value={sigAcademic}
+                    onChange={(e) => setSigAcademic(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: "11px", fontWeight: 600 }}>2. Practical Beneficiaries & Impact</label>
+                  <textarea
+                    className="text-area"
+                    style={{ minHeight: "70px", padding: "6px 10px", fontSize: "12px" }}
+                    placeholder="e.g. clinical practitioners in East Asia and localized drug approval policy creators"
+                    value={sigPractical}
+                    onChange={(e) => setSigPractical(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Fallback for other outline keys */}
+            {!["context", "problem", "objectives", "significance"].includes(activeSectionKey) && (
+              <div style={{ padding: "20px", textAlign: "center", color: "var(--text-tertiary)", fontSize: "12.5px" }}>
+                Scaffolding outlines are optimized for standard thesis introductory chapters (Context, Problem, Objectives, Significance). Select one of these outline elements to begin.
+              </div>
+            )}
+
+            {["context", "problem", "objectives", "significance"].includes(activeSectionKey) && (
+              <button
+                type="button"
+                className="btn btn-accent"
+                onClick={handleCompileScaffold}
+                style={{ width: "100%", height: "36px", marginTop: "4px" }}
+              >
+                ✨ Compile Socratic Scaffold
+              </button>
+            )}
+
+            {/* Compiled Scaffold Display */}
+            {compiledScaffold && (
+              <div style={{
+                background: "var(--bg-subtle)",
+                border: "1.5px solid var(--accent-blue)",
+                borderRadius: "8px",
+                padding: "16px",
+                marginTop: "8px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.05)"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "10.5px", fontWeight: 700, color: "var(--accent-blue)", letterSpacing: "0.05em" }}>YOUR ACADEMIC SKELETON</span>
+                  <button
+                    onClick={handleCopyScaffold}
+                    className="btn btn-secondary"
+                    style={{ height: "24px", fontSize: "10.5px", padding: "0 10px", minWidth: 0 }}
+                  >
+                    {isCopied ? "✓ Copied" : "📋 Copy"}
+                  </button>
+                </div>
+                <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5, margin: 0, fontStyle: "italic" }}>
+                  {compiledScaffold}
+                </p>
+                <div style={{ height: "1px", background: "var(--border-color)" }}></div>
+                <div style={{ display: "flex", gap: "6px", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: "14px" }}>💡</span>
+                  <p style={{ fontSize: "11px", color: "var(--text-tertiary)", lineHeight: 1.45, margin: 0 }}>
+                    <strong>Pedagogical steering hint:</strong> Paste this transition template into the main document canvas on the left. Expand it by adding your detailed arguments, and use our Connected Bibliography sources below to verify your statements.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : rightPanelTab === "mentor" ? (
           <div style={{ display: "flex", flexDirection: "column", height: "calc(100% - 48px)" }}>
             {/* Chat Messages */}
             <div className="chat-thread" style={{ flex: 1 }}>
